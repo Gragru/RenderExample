@@ -1,0 +1,103 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavManager
+@code{
+    
+}
+<a href="/?pageid=1">Start</a>
+<a href="/?pageid=2">Annan sida</a>
+
+
+<h1>RenderFragment</h1>
+@_renderFragment
+
+<hr />
+<h1>Razor</h1>
+@{
+    foreach (var block in GetPageBlocks(1))
+    {
+        if(block.Type == "text")
+        {
+            <p>@block.Content</p>
+        }
+        if (block.Type == "header")
+        {
+            <h3>@block.Content</h3>
+        }
+    }
+}
+
+
+
+@code {
+    // https://chrissainty.com/working-with-query-strings-in-blazor/
+    // https://chrissainty.com/building-components-via-rendertreebuilder/
+
+    RenderFragment? _renderFragment;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        int pageId = 1;
+
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("pageid", out var _pageId))
+        {
+            pageId = Convert.ToInt32(_pageId);
+        }
+
+
+        
+        var blocks = GetPageBlocks(pageId);
+
+
+
+        _renderFragment = builder =>
+        {
+            int seq = 0;
+            string element = "";
+            foreach (var block in blocks)
+            {
+                switch(block.Type)
+                {
+                    case "text":
+                        element = "p";
+                        break;
+                    case "header":
+                        element = "h3";
+                        break;
+                }
+
+                builder.OpenElement(seq++, element);
+                builder.AddContent(seq++, new MarkupString(block.Content));
+                builder.CloseElement();
+            }   
+        };
+        base.OnInitialized();
+    }
+
+    private static List<Models.Block> GetPageBlocks(int PageId)
+    {
+        List<Models.Block> blocks = new List<Models.Block>();
+        if (PageId == 1)
+        {
+            blocks.Add(new Models.Block(1, "text", "En viktig text"));
+            blocks.Add(new Models.Block(2, "header", "En fin rubrik"));
+            blocks.Add(new Models.Block(3, "text", "En annan text"));
+        }
+
+        if (PageId == 2)
+        {
+            blocks.Add(new Models.Block(1, "text", "En viktig text på annan sida"));
+            blocks.Add(new Models.Block(2, "header", "Er rubrik på annan sida"));
+            blocks.Add(new Models.Block(3, "text", "En annan text på annan sida"));
+        }
+
+
+        return blocks;
+    }
+
+    
+
+
+}
